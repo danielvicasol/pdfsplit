@@ -156,13 +156,39 @@ if 'resultado_pdf' not in st.session_state:
 if 'archivo_procesado' not in st.session_state:
     st.session_state.archivo_procesado = None
 
+if 'procesando' not in st.session_state:
+    st.session_state.procesando = False
+
+if 'descargando' not in st.session_state:
+    st.session_state.descargando = False
+
+if 'download_ready' not in st.session_state:
+    st.session_state.download_ready = False
+
+if 'download_payload' not in st.session_state:
+    st.session_state.download_payload = None
+
 # Procesar PDF si se cargó
 if archivo_pdf is not None:
     st.info(f"📄 Archivo: {archivo_pdf.name} ({archivo_pdf.size / 1024:.2f} KB)")
     
-    if st.button("🚀 Procesar PDF", type="primary", use_container_width=True):
+    if st.button(
+        "🚀 Procesar PDF", 
+        type="primary", 
+        use_container_width=True,
+        disabled=st.session_state.procesando
+    ):
+        st.session_state.procesando = True
+        st.rerun()
+    
+    # Procesar el PDF si se marcó como procesando
+    if st.session_state.procesando and archivo_pdf is not None:
         st.session_state.resultado_pdf = procesar_pdf(archivo_pdf)
         st.session_state.archivo_procesado = archivo_pdf.name
+        st.session_state.procesando = False
+        st.session_state.download_ready = False
+        st.session_state.download_payload = None
+        st.rerun()
 
 # Mostrar resultados si están disponibles
 if st.session_state.resultado_pdf is not None:
@@ -228,15 +254,33 @@ if st.session_state.resultado_pdf is not None:
     
     # Generar JSON
     json_resultado = descargar_json(st.session_state.resultado_pdf)
+    st.session_state.download_payload = json_resultado
     
-    # Botón de descarga
-    st.download_button(
-        label="⬇️ Descargar JSON",
-        data=json_resultado,
-        file_name=f"resultado_{Path(st.session_state.archivo_procesado).stem}.json",
-        mime="application/json",
-        use_container_width=True
-    )
+    download_placeholder = st.empty()
+    
+    if st.session_state.download_ready:
+        download_placeholder.download_button(
+            label="⬇️ Descargar JSON",
+            data=st.session_state.download_payload,
+            file_name=f"resultado_{Path(st.session_state.archivo_procesado).stem}.json",
+            mime="application/json",
+            use_container_width=True
+        )
+    else:
+        if download_placeholder.button(
+            "⬇️ Descargar JSON",
+            use_container_width=True,
+            disabled=st.session_state.descargando
+        ):
+            st.session_state.descargando = True
+            st.experimental_rerun()
+
+    if st.session_state.descargando and not st.session_state.download_ready:
+        with st.spinner("⬇️ Preparando descarga..."):
+            time.sleep(0.5)
+            st.session_state.download_ready = True
+            st.session_state.descargando = False
+            st.experimental_rerun()
     
     # Información de la descarga
     st.markdown("""
@@ -255,6 +299,9 @@ if st.session_state.resultado_pdf is not None:
         if st.button("🗑️ Limpiar y comenzar de nuevo", use_container_width=True):
             st.session_state.resultado_pdf = None
             st.session_state.archivo_procesado = None
+            st.session_state.descargando = False
+            st.session_state.download_ready = False
+            st.session_state.download_payload = None
             st.rerun()
     
     with col2:
