@@ -42,16 +42,20 @@ def procesar_pdf(archivo_pdf):
     Returns:
         dict: Diccionario con información del PDF y páginas en base64
     """
+    temp_path = None
     try:
+        # Leer contenido del archivo en memoria
+        contenido_pdf = archivo_pdf.read()
+        
         # Crear archivo temporal
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            tmp_file.write(archivo_pdf.read())
+            tmp_file.write(contenido_pdf)
             temp_path = tmp_file.name
         
-        # Leer el PDF
-        with open(temp_path, 'rb') as pdf_file:
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
-            num_paginas = len(pdf_reader.pages)
+        # Leer el PDF y mantener el archivo abierto durante el procesamiento
+        pdf_file = open(temp_path, 'rb')
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        num_paginas = len(pdf_reader.pages)
         
         # Crear contenedor para el progreso
         progress_container = st.container()
@@ -104,6 +108,9 @@ def procesar_pdf(archivo_pdf):
                 # Pequeña pausa para visualizar el progreso
                 time.sleep(0.1)
         
+        # Cerrar el archivo
+        pdf_file.close()
+        
         # Limpiar archivo temporal
         os.unlink(temp_path)
         
@@ -112,10 +119,11 @@ def procesar_pdf(archivo_pdf):
     except Exception as e:
         st.error(f"❌ Error al procesar el PDF: {str(e)}")
         # Intentar limpiar archivo temporal
-        try:
-            os.unlink(temp_path)
-        except:
-            pass
+        if temp_path:
+            try:
+                os.unlink(temp_path)
+            except:
+                pass
         return None
 
 def descargar_json(datos_json):
