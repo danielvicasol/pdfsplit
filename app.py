@@ -273,13 +273,7 @@ if st.session_state.resultado_pdf is not None:
                     time.sleep(0.5)
             st.session_state.download_ready = True
             st.session_state.descargando = False
-            download_area.download_button(
-                label="⬇️ Descargar JSON",
-                data=st.session_state.download_payload,
-                file_name=f"resultado_{Path(st.session_state.archivo_procesado).stem}.json",
-                mime="application/json",
-                use_container_width=True
-            )
+            st.experimental_rerun()
         else:
             if download_area.button(
                 "⬇️ Descargar JSON",
@@ -287,18 +281,7 @@ if st.session_state.resultado_pdf is not None:
                 disabled=st.session_state.descargando
             ):
                 st.session_state.descargando = True
-                with download_area:
-                    with st.spinner("⬇️ Preparando descarga..."):
-                        time.sleep(0.5)
-                st.session_state.download_ready = True
-                st.session_state.descargando = False
-                download_area.download_button(
-                    label="⬇️ Descargar JSON",
-                    data=st.session_state.download_payload,
-                    file_name=f"resultado_{Path(st.session_state.archivo_procesado).stem}.json",
-                    mime="application/json",
-                    use_container_width=True
-                )
+                st.experimental_rerun()
     
     # Información de la descarga
     st.markdown("""
