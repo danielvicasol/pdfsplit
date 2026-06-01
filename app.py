@@ -267,22 +267,20 @@ if st.session_state.resultado_pdf is not None:
             use_container_width=True
         )
     else:
+        if download_area.button(
+            "⬇️ Preparar descarga",
+            use_container_width=True,
+            disabled=st.session_state.descargando
+        ):
+            st.session_state.descargando = True
+
         if st.session_state.descargando:
             with download_area:
                 with st.spinner("⬇️ Preparando descarga..."):
                     time.sleep(0.5)
             st.session_state.download_ready = True
             st.session_state.descargando = False
-            st.experimental_rerun()
-        else:
-            if download_area.button(
-                "⬇️ Descargar JSON",
-                use_container_width=True,
-                disabled=st.session_state.descargando
-            ):
-                st.session_state.descargando = True
-                st.experimental_rerun()
-    
+
     # Información de la descarga
     st.markdown("""
     <div class="success-box">
