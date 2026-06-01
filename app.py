@@ -159,11 +159,8 @@ if 'archivo_procesado' not in st.session_state:
 if 'procesando' not in st.session_state:
     st.session_state.procesando = False
 
-if 'descargando' not in st.session_state:
-    st.session_state.descargando = False
-
-if 'download_ready' not in st.session_state:
-    st.session_state.download_ready = False
+if 'download_stage' not in st.session_state:
+    st.session_state.download_stage = 'idle'
 
 if 'download_payload' not in st.session_state:
     st.session_state.download_payload = None
@@ -186,7 +183,7 @@ if archivo_pdf is not None:
         st.session_state.resultado_pdf = procesar_pdf(archivo_pdf)
         st.session_state.archivo_procesado = archivo_pdf.name
         st.session_state.procesando = False
-        st.session_state.download_ready = False
+        st.session_state.download_stage = 'idle'
         st.session_state.download_payload = None
         st.rerun()
 
@@ -258,7 +255,7 @@ if st.session_state.resultado_pdf is not None:
     
     download_area = st.empty()
     
-    if st.session_state.download_ready:
+    if st.session_state.download_stage == 'ready':
         download_area.download_button(
             label="⬇️ Descargar JSON",
             data=st.session_state.download_payload,
@@ -266,22 +263,19 @@ if st.session_state.resultado_pdf is not None:
             mime="application/json",
             use_container_width=True
         )
+    elif st.session_state.download_stage == 'preparing':
+        with download_area:
+            with st.spinner("⬇️ Preparando descarga..."):
+                time.sleep(0.5)
+        st.session_state.download_stage = 'ready'
+        st.rerun()
     else:
-        if st.session_state.descargando:
-            with download_area:
-                with st.spinner("⬇️ Preparando descarga..."):
-                    time.sleep(0.5)
-            st.session_state.download_ready = True
-            st.session_state.descargando = False
+        if download_area.button(
+            "⬇️ Descargar JSON",
+            use_container_width=True
+        ):
+            st.session_state.download_stage = 'preparing'
             st.rerun()
-        else:
-            if download_area.button(
-                "⬇️ Descargar JSON",
-                use_container_width=True,
-                disabled=st.session_state.descargando
-            ):
-                st.session_state.descargando = True
-                st.rerun()
 
     # Información de la descarga
     st.markdown("""
@@ -300,8 +294,7 @@ if st.session_state.resultado_pdf is not None:
         if st.button("🗑️ Limpiar y comenzar de nuevo", use_container_width=True):
             st.session_state.resultado_pdf = None
             st.session_state.archivo_procesado = None
-            st.session_state.descargando = False
-            st.session_state.download_ready = False
+            st.session_state.download_stage = 'idle'
             st.session_state.download_payload = None
             st.rerun()
     
