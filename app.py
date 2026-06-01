@@ -57,12 +57,9 @@ def procesar_pdf(archivo_pdf):
         pdf_reader = PyPDF2.PdfReader(pdf_file)
         num_paginas = len(pdf_reader.pages)
         
-        # Crear contenedor para el progreso
-        progress_container = st.container()
-        contador_container = st.container()
-        
-        with progress_container:
-            progress_bar = st.progress(0)
+        # Crear contenedor para el progreso (una sola vez)
+        progress_bar = st.progress(0)
+        contador_placeholder = st.empty()
         
         # Estructura de datos para el resultado
         resultado = {
@@ -82,7 +79,8 @@ def procesar_pdf(archivo_pdf):
                 progreso = (idx + 1) / num_paginas
                 progress_bar.progress(progreso)
                 
-                with contador_container:
+                # Actualizar el contador
+                with contador_placeholder.container():
                     st.metric(
                         "Progreso", 
                         f"{idx + 1} / {num_paginas}",
